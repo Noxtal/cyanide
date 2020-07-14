@@ -2,7 +2,7 @@
 
 Cyanide is a tool to poison request logs by injecting a payload in the user-agent. It has 3 payloads ready for now.
 
-This is a BadByte (my team) Official Tool. You can join our hacking community [here](https://discord.gg/CDACNFg).
+This is a BadByte, my hacking team, Official Tool. You can join our hacking community [here](https://discord.gg/CDACNFg).
 
 ```
 usage: cyanide.py [-h] [-q] [-Pl] [-pl PAYLOAD] [-m METHOD] [-P PARAMETER]
