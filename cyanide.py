@@ -5,7 +5,7 @@ from colorama import init, Fore, Style
 import json
 init(convert=True)
 
-VERSION = "V1.3.0"
+VERSION = "V1.3.1"
 
 class Payload():
     def __init__(self, id, name, code, argcount, desc, usage):
@@ -21,10 +21,10 @@ class Payload():
             self.code = self.code % tuple(args)
         else:
             throwProgramError("PAYLOAD BUILDING ERROR",
-                              f"Payload {self.id} necessitates {self.argcount} arguments!")
+                              f"Payload {self.id} requires {self.argcount} arguments!")
 
     def __str__(self):
-        return f"{CODES['HELP']} {self.id} (min. {len(self.code)} chars, necessitates {self.argcount} args) -> {self.name}: {self.desc} Usage: {self.usage}"
+        return f"{CODES['HELP']} {self.id} (min. {len(self.code)} chars, requires {self.argcount} args) -> {self.name}: {self.desc} Usage: {self.usage}"
 
 
 CODES = {
