@@ -1,2 +1,2 @@
-* [Getting Started](/)
-* [Payloads](/payloads)
+* [Getting Started](/ "cyanide")
+* [Payloads](/payloads "Payloads [cyanide]")

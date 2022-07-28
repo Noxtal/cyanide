@@ -9,6 +9,6 @@
 - 6 Standalone payloads for various uses
 
 [GitHub](https://github.com/noxtal/cyanide/)
-[Get Started](#cyanide)
+[Get Started](#getting-started)
 
 ![color](#414141)
