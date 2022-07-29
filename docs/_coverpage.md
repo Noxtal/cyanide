@@ -11,4 +11,4 @@
 [GitHub](https://github.com/noxtal/cyanide/)
 [Get Started](#getting-started)
 
-![color](#414141)
+![color](#292929)
