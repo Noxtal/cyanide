@@ -1,4 +1,5 @@
 # cyanide
+[![Visits Badge](https://badges.strrl.dev/visits/Noxtal/cyanide)](https://badges.strrl.dev)
 
 (a wiki is available [here](https://cyanide.noxtal.com))
 
